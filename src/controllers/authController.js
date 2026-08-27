@@ -68,4 +68,32 @@ const changePassword = asyncHandler(async (req, res) => {
   res.json({ success: true, message: 'تم تغيير كلمة المرور بنجاح' });
 });
 
-module.exports = { login, getMe, changePassword };
+// @desc    Change username (requires current password as confirmation)
+// @route   PUT /api/auth/update-username
+// @access  Private
+const updateUsername = asyncHandler(async (req, res) => {
+  const { newUsername, currentPassword } = req.body;
+
+  if (!newUsername || !currentPassword) {
+    throw new ApiError(400, 'الرجاء إدخال اسم المستخدم الجديد وكلمة المرور الحالية');
+  }
+  if (newUsername.trim().length < 3) {
+    throw new ApiError(400, 'اسم المستخدم يجب أن يكون 3 أحرف على الأقل');
+  }
+
+  const admin = await Admin.findById(req.admin._id).select('+password');
+  if (!(await admin.matchPassword(currentPassword))) {
+    throw new ApiError(401, 'كلمة المرور الحالية غير صحيحة');
+  }
+
+  admin.username = newUsername.trim();
+  await admin.save();
+
+  res.json({
+    success: true,
+    data: { id: admin._id, username: admin.username, email: admin.email },
+    message: 'تم تغيير اسم المستخدم بنجاح',
+  });
+});
+
+module.exports = { login, getMe, changePassword, updateUsername };
