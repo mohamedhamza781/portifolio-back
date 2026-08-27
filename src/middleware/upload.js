@@ -28,4 +28,27 @@ const uploadResume = multer({
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
 });
 
-module.exports = { uploadResume, UPLOADS_DIR };
+// General-purpose image uploads (project covers, avatars, etc.) — returns a
+// URL the caller attaches to whichever field it wants (project.image,
+// profile.avatar, ...), so it isn't tied to any one resource.
+const imageStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, UPLOADS_DIR),
+  filename: (req, file, cb) => {
+    cb(null, `image-${Date.now()}${path.extname(file.originalname) || '.jpg'}`);
+  },
+});
+
+const imageFileFilter = (req, file, cb) => {
+  if (!file.mimetype.startsWith('image/')) {
+    return cb(new ApiError(400, 'الملف يجب أن يكون صورة (JPG, PNG, WEBP...)'));
+  }
+  cb(null, true);
+};
+
+const uploadImage = multer({
+  storage: imageStorage,
+  fileFilter: imageFileFilter,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+});
+
+module.exports = { uploadResume, uploadImage, UPLOADS_DIR };

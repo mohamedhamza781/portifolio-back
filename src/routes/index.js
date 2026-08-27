@@ -11,5 +11,6 @@ router.use('/education', require('./educationRoutes'));
 router.use('/certificates', require('./certificateRoutes'));
 router.use('/contact', require('./contactRoutes'));
 router.use('/settings', require('./siteSettingsRoutes'));
+router.use('/uploads', require('./uploadRoutes'));
 
 module.exports = router;
