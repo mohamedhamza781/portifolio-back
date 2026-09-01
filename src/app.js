@@ -2,6 +2,7 @@ const express = require('express');
 const path = require('path');
 const cors = require('cors');
 const helmet = require('helmet');
+const compression = require('compression');
 const morgan = require('morgan');
 const mongoSanitize = require('express-mongo-sanitize');
 const rateLimit = require('express-rate-limit');
@@ -13,7 +14,14 @@ const errorHandler = require('./middleware/errorHandler');
 const app = express();
 
 // ── Security & parsing middleware ──────────────────────
-app.use(helmet());
+// helmet's default Cross-Origin-Resource-Policy ("same-origin") blocks the
+// frontend from reading ANY response — JSON or files — because it lives on
+// a different origin (a separate Render service) by design. CORS above
+// already restricts who can call this API; CORP on top of that just breaks
+// legitimate cross-origin requests (some browsers, notably Safari, enforce
+// it even for plain fetch/XHR, not just embedded resources).
+app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+app.use(compression()); // gzip responses — noticeably faster on slow connections
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(mongoSanitize());
