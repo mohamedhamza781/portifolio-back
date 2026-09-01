@@ -5,7 +5,8 @@ const projectSchema = new mongoose.Schema(
     title: { type: String, required: true, trim: true },
     description: { type: String, required: true },
     longDescription: { type: String, default: '' },
-    image: { type: String, default: null },
+    image: { type: String, default: null }, // كصورة غلاف رئيسية (تُعرض في البطاقة)
+    images: { type: [String], default: [] }, // معرض صور إضافي يُعرض داخل تفاصيل المشروع
     technologies: { type: [String], default: [] },
     category: { type: String, required: true, trim: true },
     github: { type: String, default: '' },
