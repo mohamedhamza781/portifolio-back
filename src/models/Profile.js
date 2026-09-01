@@ -34,6 +34,7 @@ const profileSchema = new mongoose.Schema(
     bio: { type: String, default: '' },
     shortBio: { type: String, default: '' },
     resumeUrl: { type: String, default: '' },
+    resumePublicId: { type: String, default: '' }, // Cloudinary public_id, used to delete the old file when replaced
     social: { type: socialSchema, default: () => ({}) },
     stats: { type: [statSchema], default: [] },
   },
