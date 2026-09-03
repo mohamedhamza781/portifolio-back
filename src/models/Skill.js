@@ -20,4 +20,6 @@ const skillCategorySchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+skillCategorySchema.index({ order: 1, createdAt: 1 });
+
 module.exports = mongoose.model('Skill', skillCategorySchema);

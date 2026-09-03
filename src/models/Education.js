@@ -16,4 +16,6 @@ const educationSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+educationSchema.index({ endDate: -1, createdAt: -1 });
+
 module.exports = mongoose.model('Education', educationSchema);
