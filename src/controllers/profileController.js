@@ -45,22 +45,15 @@ const uploadResume = asyncHandler(async (req, res) => {
     public_id: `resume-${Date.now()}.pdf`,
   });
 
-  // fl_attachment forces Cloudinary to serve this with
-  // Content-Disposition: attachment (and the right filename), so the
-  // browser downloads it correctly even though the file lives on a
-  // different domain — the HTML `download` attribute alone is ignored
-  // for cross-origin links.
-  const downloadUrl = result.secure_url.replace('/upload/', '/upload/fl_attachment/');
-
   let profile = await Profile.findOne();
   const previousPublicId = profile?.resumePublicId;
 
   if (profile) {
-    profile.resumeUrl = downloadUrl;
+    profile.resumeUrl = result.secure_url;
     profile.resumePublicId = result.public_id;
     await profile.save();
   } else {
-    profile = await Profile.create({ resumeUrl: downloadUrl, resumePublicId: result.public_id });
+    profile = await Profile.create({ resumeUrl: result.secure_url, resumePublicId: result.public_id });
   }
 
   // Best-effort cleanup of the previous file on Cloudinary.
