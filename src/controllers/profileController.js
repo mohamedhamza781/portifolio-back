@@ -39,18 +39,28 @@ const uploadResume = asyncHandler(async (req, res) => {
   const result = await uploadBufferToCloudinary(req.file.buffer, {
     resource_type: 'raw', // PDFs/docs — not an image
     folder: 'portfolio/resume',
-    public_id: `resume-${Date.now()}`,
+    // Raw uploads use public_id as the literal stored filename — without
+    // ".pdf" here, the returned URL has no extension, so browsers can't
+    // tell what to download it as. Explicitly including it fixes that.
+    public_id: `resume-${Date.now()}.pdf`,
   });
+
+  // fl_attachment forces Cloudinary to serve this with
+  // Content-Disposition: attachment (and the right filename), so the
+  // browser downloads it correctly even though the file lives on a
+  // different domain — the HTML `download` attribute alone is ignored
+  // for cross-origin links.
+  const downloadUrl = result.secure_url.replace('/upload/', '/upload/fl_attachment/');
 
   let profile = await Profile.findOne();
   const previousPublicId = profile?.resumePublicId;
 
   if (profile) {
-    profile.resumeUrl = result.secure_url;
+    profile.resumeUrl = downloadUrl;
     profile.resumePublicId = result.public_id;
     await profile.save();
   } else {
-    profile = await Profile.create({ resumeUrl: result.secure_url, resumePublicId: result.public_id });
+    profile = await Profile.create({ resumeUrl: downloadUrl, resumePublicId: result.public_id });
   }
 
   // Best-effort cleanup of the previous file on Cloudinary.
