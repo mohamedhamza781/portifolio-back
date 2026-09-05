@@ -53,12 +53,15 @@ const uploadResume = asyncHandler(async (req, res) => {
   }
 
   const result = await uploadBufferToCloudinary(req.file.buffer, {
-    resource_type: 'raw', // PDFs/docs — not an image
+    // 'raw' delivery is blocked/restricted by default on many Cloudinary
+    // accounts unless "Allow delivery of PDF and ZIP files" is explicitly
+    // enabled in Security settings. 'image' resource type stores/serves
+    // the original PDF bytes too (Cloudinary treats PDF as a page-based
+    // image format) without that restriction — same file, no security gate.
+    resource_type: 'image',
+    format: 'pdf',
     folder: 'portfolio/resume',
-    // Raw uploads use public_id as the literal stored filename — without
-    // ".pdf" here, the returned URL has no extension, so browsers can't
-    // tell what to download it as. Explicitly including it fixes that.
-    public_id: `resume-${Date.now()}.pdf`,
+    public_id: `resume-${Date.now()}`,
   });
 
   console.log(`[resume upload] Cloudinary stored: ${result.secure_url}, bytes=${result.bytes}`);
@@ -76,7 +79,7 @@ const uploadResume = asyncHandler(async (req, res) => {
 
   // Best-effort cleanup of the previous file on Cloudinary.
   if (previousPublicId) {
-    cloudinary.uploader.destroy(previousPublicId, { resource_type: 'raw' }).catch(() => {});
+    cloudinary.uploader.destroy(previousPublicId, { resource_type: 'image' }).catch(() => {});
   }
 
   res.json({ success: true, data: profile });
