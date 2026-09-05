@@ -36,6 +36,22 @@ const uploadResume = asyncHandler(async (req, res) => {
     throw new ApiError(400, 'لم يتم إرفاق أي ملف');
   }
 
+  // Diagnostic: every real PDF starts with the 4 bytes "%PDF". If this
+  // check fails, the file arrived at our server already broken (a
+  // client-side/network problem) — if it passes but the download still
+  // doesn't open, the corruption happens after this point (during the
+  // Cloudinary upload or its delivery).
+  const header = req.file.buffer.slice(0, 4).toString('ascii');
+  console.log(
+    `[resume upload] size=${req.file.buffer.length} bytes, header="${header}", mimetype=${req.file.mimetype}, originalname=${req.file.originalname}`
+  );
+  if (header !== '%PDF') {
+    throw new ApiError(
+      400,
+      `الملف المستلم بالسيرفر غير صالح كـ PDF (أول 4 بايت: "${header}", الحجم: ${req.file.buffer.length} بايت) — المشكلة عند الرفع من المتصفح، مو بالتخزين.`
+    );
+  }
+
   const result = await uploadBufferToCloudinary(req.file.buffer, {
     resource_type: 'raw', // PDFs/docs — not an image
     folder: 'portfolio/resume',
@@ -44,6 +60,8 @@ const uploadResume = asyncHandler(async (req, res) => {
     // tell what to download it as. Explicitly including it fixes that.
     public_id: `resume-${Date.now()}.pdf`,
   });
+
+  console.log(`[resume upload] Cloudinary stored: ${result.secure_url}, bytes=${result.bytes}`);
 
   let profile = await Profile.findOne();
   const previousPublicId = profile?.resumePublicId;
